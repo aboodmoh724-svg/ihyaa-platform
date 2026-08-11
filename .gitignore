@@ -1,0 +1,35 @@
+# Dependencies and generated builds
+node_modules/
+dist/
+.npm-cache/
+
+# Environment files and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+*credentials*.json
+private/
+
+# Local data exports and database backups
+*.sql.gz
+*.dump
+*.backup
+data/import*.json
+
+# Logs, coverage, OS and editor files
+*.log
+*.err
+*.pid
+coverage/
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Local QA artifacts (keep source code and docs only)
+qa-*.png
+implementation-*.png
