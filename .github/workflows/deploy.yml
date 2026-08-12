@@ -88,6 +88,42 @@ jobs:
           echo "✅ SSH host key verified in known_hosts"
 
       # ─────────────────────────────────────
+      # تشخيص مصادقة SSH قبل النسخ والإنشاء
+      # ─────────────────────────────────────
+      - name: Test SSH Authentication Diagnostic
+        run: |
+          echo "--- 1. Testing private key validity ---"
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /tmp/deploy_key.pub 2>/dev/null; then
+            echo "❌ Error: SSH_PRIVATE_KEY format is invalid or corrupted in GitHub Secrets"
+            exit 1
+          fi
+          echo "✅ Private key format is valid"
+          echo "Key Fingerprint:"
+          ssh-keygen -lf /tmp/deploy_key.pub
+
+          echo "--- 2. Testing SSH connection ---"
+          if ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -p "${{ secrets.SERVER_PORT }}" \
+            "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
+            'echo SSH_CONNECTION_OK'; then
+            echo "✅ SSH Authentication test PASSED"
+          else
+            echo "❌ SSH Connection failed. Running verbose diagnostics..."
+            ssh -vvv \
+              -i ~/.ssh/deploy_key \
+              -o IdentitiesOnly=yes \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=yes \
+              -p "${{ secrets.SERVER_PORT }}" \
+              "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
+              true 2>&1 | grep -E "(Offering public key|Server accepts key|Authentications that can continue|Permission denied|identity file|Load key)" || true
+            exit 1
+          fi
+
+      # ─────────────────────────────────────
       # نسخ احتياطي للنسخة الحالية (rollback)
       # ─────────────────────────────────────
       - name: Backup current version
