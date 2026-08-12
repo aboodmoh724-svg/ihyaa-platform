@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive, BookOpen, CalendarBlank, ChartBar, Check, CheckCircle, Clock, FloppyDisk, Gear,
-  House, PencilSimple, Plus, SignOut, Student, UserCircle, Users, UsersThree, X,
+  House, PencilSimple, Plus, SignOut, Student, UserCircle, Users, UsersThree, Warning, X,
 } from "@phosphor-icons/react";
 import { dataService } from "./data.js";
 
@@ -25,6 +25,20 @@ function navigate(path) {
 
 async function signOut() {
   try { await dataService.signOut(); } finally { navigate("/login"); }
+}
+
+function LogoutConfirmModal({ onConfirm, onCancel }) {
+  return <div className="modal-backdrop logout-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onCancel()}>
+    <section className="logout-confirm-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+      <div className="logout-confirm-icon"><Warning size={40} weight="fill" /></div>
+      <h2>تسجيل الخروج</h2>
+      <p>هل تود تأكيد تسجيل الخروج من المنصة؟</p>
+      <div className="logout-confirm-actions">
+        <button className="button button-primary logout-confirm-btn" onClick={onConfirm}><SignOut size={20} /> تأكيد الخروج</button>
+        <button className="button button-ghost" onClick={onCancel}>إلغاء</button>
+      </div>
+    </section>
+  </div>;
 }
 
 function Brand({ compact = false }) {
@@ -96,8 +110,11 @@ export function TeacherWorkspace() {
   const heard = students.filter((student) => student.quran.type).length;
   const isQuranDay = new Date(`${date}T12:00:00+03:00`).getUTCDay() === 0;
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const requestLogout = () => setShowLogoutConfirm(true);
+
   return <div className="teacher-shell teacher-workspace teacher-simple" dir="rtl">
-    <header className="teacher-header"><div className="teacher-brand"><Brand compact /><div><small>مؤسسة إحياء</small><h1>{page.circle.name}</h1><p><CalendarBlank size={19} /> {formatDate(date)}</p></div></div><blockquote>وَلِحَامِلِ الْقُرْآنِ <strong>شَرَفٌ</strong> فِي الْأُمَمِ،<br />وَبِهِ <strong>يُعْلَى</strong> مَقَامُ الْمَرْءِ وَيَرْتَقِي.</blockquote><button type="button" className="header-back" onClick={signOut}>الخروج <SignOut size={22} /></button></header>
+    <header className="teacher-header"><div className="teacher-brand"><Brand compact /><div><small>مؤسسة إحياء</small><h1>{page.circle.name}</h1><p><CalendarBlank size={19} /> {formatDate(date)}</p></div></div><blockquote>وَلِحَامِلِ الْقُرْآنِ <strong>شَرَفٌ</strong> فِي الْأُمَمِ،<br />وَبِهِ <strong>يُعْلَى</strong> مَقَامُ الْمَرْءِ وَيَرْتَقِي.</blockquote><button type="button" className="header-back" onClick={requestLogout}>الخروج <SignOut size={22} /></button></header>
     <main className="attendance-page">
       <section className="teacher-daybar panel">
         <div className="circle-picker"><span>حلقتك</span><select value={circleId} onChange={(event) => load({ circleId: event.target.value, date })}>{page.circles.map((circle) => <option key={circle.id} value={circle.id}>{circle.name} — {circle.activeStudents} طالب</option>)}</select></div>
@@ -114,6 +131,7 @@ export function TeacherWorkspace() {
       </section>
     </main>
     <footer className="teacher-footer"><div className={`save-indicator ${state}`}><CheckCircle size={23} weight="fill" />{state === "saving" ? "جارٍ الحفظ..." : state === "saved" ? "تم الحفظ في قاعدة البيانات" : isQuranDay ? `${marked} حضور · ${heard} متابعة` : `${marked} حضور مسجل`}</div><button disabled={state === "saving"} className="button button-primary teacher-save" onClick={() => saveEntries(students, "تم حفظ بيانات الحلقة كاملة وأصبحت ظاهرة للإدارة.")}><FloppyDisk size={22} /> حفظ الحلقة كاملة</button></footer>
+    {showLogoutConfirm && <LogoutConfirmModal onConfirm={signOut} onCancel={() => setShowLogoutConfirm(false)} />}
   </div>;
 }
 
@@ -132,9 +150,51 @@ export function AdminWorkspace() {
   const [monthFilters, setMonthFilters] = useState({ month: overviewMonth(), circleId: "", teacherId: "", student: "" });
   const [message, setMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const suppressNextPop = useRef(false);
+
+  const requestLogout = () => setShowLogoutConfirm(true);
 
   const refreshOverview = useCallback(() => dataService.adminOverview().then(setOverview).catch((error) => error.status === 401 ? navigate("/login") : setMessage(error.message)), []);
   useEffect(() => { refreshOverview(); }, [refreshOverview]);
+
+  /* Back-button: capture phase fires BEFORE App.jsx's handler */
+  useEffect(() => {
+    /* Push guard entry so first Back stays on /admin */
+    window.history.replaceState({ admin: true, tab: "اليوم" }, "", "/admin");
+
+    function onPop(event) {
+      if (suppressNextPop.current) { suppressNextPop.current = false; return; }
+      const pathname = window.location.pathname.replace(/\/$/, "") || "/";
+      const hash = window.location.hash.replace("#", "");
+
+      /* If hash points to valid tab, switch to it */
+      if (pathname === "/admin" && hash) {
+        const label = decodeURIComponent(hash);
+        const valid = adminNav.find(([l]) => l === label);
+        if (valid) {
+          event.stopImmediatePropagation();
+          setActive(label);
+          return;
+        }
+      }
+
+      /* Back went to /admin with no hash (from a tab) → go to home tab */
+      if (pathname === "/admin" && !hash && active !== "اليوم") {
+        event.stopImmediatePropagation();
+        setActive("اليوم");
+        return;
+      }
+
+      /* Back tried to leave /admin entirely, or we're already at home → show logout */
+      event.stopImmediatePropagation();
+      suppressNextPop.current = true;
+      window.history.pushState({ admin: true, tab: "اليوم" }, "", "/admin");
+      setShowLogoutConfirm(true);
+    }
+    window.addEventListener("popstate", onPop, true);
+    return () => window.removeEventListener("popstate", onPop, true);
+  }, [active]);
 
   async function loadRecords(kind, nextFilters = filters) {
     setMessage("");
@@ -146,6 +206,12 @@ export function AdminWorkspace() {
 
   function open(section) {
     setActive(section);
+    /* Push hash so back-button returns to previous tab */
+    if (section === "اليوم") {
+      window.history.pushState({ admin: true, tab: "اليوم" }, "", "/admin");
+    } else {
+      window.history.pushState({ admin: true, tab: section }, "", `/admin#${encodeURIComponent(section)}`);
+    }
     if (section === "الحضور") loadRecords("attendance");
     if (section === "متابعة القرآن") loadRecords("quran");
     if (section === "التقارير") loadMonthly();
@@ -204,9 +270,9 @@ export function AdminWorkspace() {
 
   if (!overview) return <Loading message={message || "جارٍ تحميل بيانات المؤسسة..."} />;
   return <div className="admin-shell admin-workspace" dir="rtl">
-    <aside className="admin-sidebar"><Brand /><nav>{adminNav.map(([label, Icon]) => <button key={label} className={active === label ? "active" : ""} onClick={() => open(label)}><Icon size={23} />{label}<span /></button>)}</nav><button type="button" className="admin-logout" onClick={signOut}><SignOut size={21} /> تسجيل الخروج</button></aside>
+    <aside className="admin-sidebar"><Brand /><nav>{adminNav.map(([label, Icon]) => <button key={label} className={active === label ? "active" : ""} onClick={() => open(label)}><Icon size={23} />{label}<span /></button>)}</nav><button type="button" className="admin-logout" onClick={requestLogout}><SignOut size={21} /> تسجيل الخروج</button></aside>
     <main className="admin-main">
-      <header className="admin-top"><div><h1>{active === "اليوم" ? "بِحُسنِ إدارتك يستقيمُ العمل ويزدهرُ أثرُ القرآن" : active}</h1><p><CalendarBlank size={19} /> آخر بيانات مسجلة: {formatDate(overview.referenceDate, true)}</p></div><div className="admin-profile"><span><UserCircle size={36} /> إدارة مؤسسة إحياء</span></div></header>
+      <header className="admin-top"><div><h1>{active === "اليوم" ? "بِحُسنِ إدارتك يستقيمُ العمل ويزدهرُ أثرُ القرآن" : active}</h1><p><CalendarBlank size={19} /> آخر بيانات مسجلة: {formatDate(overview.referenceDate, true)}</p></div><div className="admin-profile"><span><UserCircle size={36} /> إدارة مؤسسة إحياء</span><button type="button" className="mobile-logout" onClick={requestLogout} aria-label="تسجيل الخروج"><SignOut size={22} /></button></div></header>
       {message && <div className="notice notice-error">{message}</div>}
       {successMessage && <div className="notice notice-success" role="status">{successMessage}</div>}
       {active === "اليوم" && <AdminHome overview={overview} open={open} />}
@@ -219,6 +285,7 @@ export function AdminWorkspace() {
     </main>
     {editor && <EntityEditor editor={editor} overview={overview} onClose={() => setEditor(null)} onSave={saveEntity} />}
     {studentProfile && <StudentProfile profile={studentProfile} onClose={() => setStudentProfile(null)} />}
+    {showLogoutConfirm && <LogoutConfirmModal onConfirm={signOut} onCancel={() => setShowLogoutConfirm(false)} />}
   </div>;
 }
 
