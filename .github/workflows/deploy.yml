@@ -1,0 +1,283 @@
+name: Deploy to Production
+
+# ─────────────────────────────────────────────
+# يعمل فقط عند push إلى main
+# فروع التطوير (codex وغيرها) لا تُنشر
+# ─────────────────────────────────────────────
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false   # لا تُلغِ عملية نشر جارية
+
+env:
+  NODE_VERSION: "24"
+  BACKEND_DIR: /opt/ihyaa
+  FRONTEND_DIR: /www/wwwroot/ihyaa.alrahmakuran.site
+  BACKUP_DIR: /opt/ihyaa-backups
+  PM2_PROCESS: ihyaa-api
+  DOMAIN: https://ihyaa.alrahmakuran.site
+
+jobs:
+  # ═══════════════════════════════════════════
+  # المرحلة 1: بناء واختبار (داخل GitHub فقط)
+  # ═══════════════════════════════════════════
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:sites
+
+      - name: Build frontend
+        run: npm run build
+
+      # حفظ ملفات البناء للمرحلة التالية
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          retention-days: 7
+          path: |
+            dist/client/
+            server/
+            package.json
+            package-lock.json
+
+  # ═══════════════════════════════════════════
+  # المرحلة 2: النشر عبر SSH (فقط إذا نجح البناء)
+  # ═══════════════════════════════════════════
+  deploy:
+    name: Deploy to Server
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build/
+
+      # ─────────────────────────────────────
+      # إعداد SSH
+      # ─────────────────────────────────────
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      # ─────────────────────────────────────
+      # نسخ احتياطي للنسخة الحالية (rollback)
+      # ─────────────────────────────────────
+      - name: Backup current version
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} bash <<'REMOTE'
+          set -e
+          mkdir -p ${{ env.BACKUP_DIR }}
+          STAMP=$(date +%Y%m%d-%H%M%S)
+          tar czf ${{ env.BACKUP_DIR }}/backup-${STAMP}.tar.gz \
+            -C ${{ env.BACKEND_DIR }} server/ package.json package-lock.json 2>/dev/null || true
+          # الاحتفاظ بآخر 5 نسخ فقط
+          ls -t ${{ env.BACKUP_DIR }}/backup-*.tar.gz 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
+          echo "✅ Backup created: backup-${STAMP}.tar.gz"
+          REMOTE
+
+      # ─────────────────────────────────────
+      # نشر Backend
+      # ─────────────────────────────────────
+      - name: Deploy backend
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }}" \
+            build/server/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ env.BACKEND_DIR }}/server/
+
+          rsync -az \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }}" \
+            build/package.json build/package-lock.json \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ env.BACKEND_DIR }}/
+
+      # ─────────────────────────────────────
+      # تثبيت التبعيات
+      # ─────────────────────────────────────
+      - name: Install production dependencies
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ env.BACKEND_DIR }} && npm ci --omit=dev"
+
+      # ─────────────────────────────────────
+      # نشر Frontend عبر staging directory
+      # ─────────────────────────────────────
+      - name: Deploy frontend (atomic swap)
+        run: |
+          STAGING="${{ env.FRONTEND_DIR }}-staging"
+          PREVIOUS="${{ env.FRONTEND_DIR }}-previous"
+
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "rm -rf ${STAGING} && mkdir -p ${STAGING}"
+
+          rsync -az \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }}" \
+            build/dist/client/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${STAGING}/
+
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "rm -rf ${PREVIOUS} && \
+             mv ${{ env.FRONTEND_DIR }} ${PREVIOUS} && \
+             mv ${STAGING} ${{ env.FRONTEND_DIR }}"
+
+      # ─────────────────────────────────────
+      # إعادة تشغيل API
+      # ─────────────────────────────────────
+      - name: Restart API
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "pm2 restart ${{ env.PM2_PROCESS }} && sleep 3 && pm2 status ${{ env.PM2_PROCESS }}"
+
+      # ─────────────────────────────────────
+      # Health check بعد النشر
+      # ─────────────────────────────────────
+      - name: Health check
+        id: health
+        continue-on-error: true
+        run: |
+          echo "--- Frontend check ---"
+          FRONTEND_OK=false
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${{ env.DOMAIN }}" || true)
+            if [ "$STATUS" = "200" ]; then FRONTEND_OK=true; echo "✅ Frontend OK (HTTP $STATUS)"; break; fi
+            echo "⏳ Attempt $i/5: HTTP $STATUS"
+            sleep 5
+          done
+
+          echo "--- API check ---"
+          API_OK=false
+          for i in 1 2 3 4 5; do
+            RESPONSE=$(curl -sf "${{ env.DOMAIN }}/api/health" 2>/dev/null || true)
+            if echo "$RESPONSE" | grep -q '"ok":true'; then API_OK=true; echo "✅ API OK"; break; fi
+            echo "⏳ Attempt $i/5: ${RESPONSE:-no response}"
+            sleep 5
+          done
+
+          if [ "$FRONTEND_OK" = "true" ] && [ "$API_OK" = "true" ]; then
+            echo "✅ All health checks passed"
+          else
+            echo "❌ Health check FAILED (Frontend=$FRONTEND_OK, API=$API_OK)"
+            exit 1
+          fi
+
+      # ═══════════════════════════════════════════
+      # Rollback تلقائي عند فشل health check
+      # ═══════════════════════════════════════════
+      - name: "Rollback: Restore backend"
+        if: steps.health.outcome == 'failure'
+        run: |
+          echo "🔄 بدء الاسترجاع التلقائي..."
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} bash <<'REMOTE'
+          set -e
+          BACKUP=$(ls -t ${{ env.BACKUP_DIR }}/backup-*.tar.gz 2>/dev/null | head -1)
+          if [ -z "$BACKUP" ]; then
+            echo "❌ لا توجد نسخة احتياطية للاسترجاع"
+            exit 1
+          fi
+          echo "📦 استرجاع من: $BACKUP"
+          cd ${{ env.BACKEND_DIR }}
+          tar xzf "$BACKUP"
+          echo "✅ Backend restored"
+          REMOTE
+
+      - name: "Rollback: Restore frontend"
+        if: steps.health.outcome == 'failure'
+        run: |
+          PREVIOUS="${{ env.FRONTEND_DIR }}-previous"
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} bash <<REMOTE
+          set -e
+          if [ -d "${PREVIOUS}" ]; then
+            rm -rf ${{ env.FRONTEND_DIR }}
+            mv "${PREVIOUS}" ${{ env.FRONTEND_DIR }}
+            echo "✅ Frontend restored"
+          else
+            echo "⚠️ لا توجد نسخة frontend سابقة"
+          fi
+          REMOTE
+
+      - name: "Rollback: Reinstall dependencies"
+        if: steps.health.outcome == 'failure'
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ env.BACKEND_DIR }} && npm ci --omit=dev"
+
+      - name: "Rollback: Restart API"
+        if: steps.health.outcome == 'failure'
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "pm2 restart ${{ env.PM2_PROCESS }} && sleep 5"
+
+      - name: "Rollback: Verify recovery"
+        id: rollback_health
+        if: steps.health.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          FRONTEND_OK=false
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${{ env.DOMAIN }}" || true)
+            if [ "$STATUS" = "200" ]; then FRONTEND_OK=true; break; fi
+            sleep 5
+          done
+
+          API_OK=false
+          for i in 1 2 3 4 5; do
+            RESPONSE=$(curl -sf "${{ env.DOMAIN }}/api/health" 2>/dev/null || true)
+            if echo "$RESPONSE" | grep -q '"ok":true'; then API_OK=true; break; fi
+            sleep 5
+          done
+
+          if [ "$FRONTEND_OK" = "true" ] && [ "$API_OK" = "true" ]; then
+            echo "✅ Rollback successful — site is back online"
+          else
+            echo "❌ Rollback FAILED — manual intervention required"
+            exit 1
+          fi
+
+      # ─────────────────────────────────────
+      # النتيجة النهائية
+      # ─────────────────────────────────────
+      - name: "Result: Deploy failed, rollback succeeded"
+        if: steps.health.outcome == 'failure' && steps.rollback_health.outcome == 'success'
+        run: |
+          echo "::error::❌ النشر الجديد فشل لكن الاسترجاع نجح — الموقع يعمل بالنسخة السابقة."
+          exit 1
+
+      - name: "Result: Deploy failed, rollback also failed"
+        if: steps.health.outcome == 'failure' && steps.rollback_health.outcome == 'failure'
+        run: |
+          echo "::error::🚨 النشر فشل والاسترجاع فشل أيضًا — يحتاج تدخلًا يدويًا فوريًا!"
+          exit 1
+
+      # ─────────────────────────────────────
+      # تنظيف SSH key دائمًا
+      # ─────────────────────────────────────
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
