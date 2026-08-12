@@ -75,10 +75,17 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
+          touch ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p ${{ secrets.SERVER_PORT }} -t rsa,ed25519,ecdsa ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} -t rsa,ed25519,ecdsa ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          if ! ssh-keygen -F "[${{ secrets.SERVER_HOST }}]:${{ secrets.SERVER_PORT }}" -f ~/.ssh/known_hosts >/dev/null 2>&1 && ! ssh-keygen -F "${{ secrets.SERVER_HOST }}" -f ~/.ssh/known_hosts >/dev/null 2>&1; then
+            echo "❌ SSH host key was not added correctly for [${{ secrets.SERVER_HOST }}]:${{ secrets.SERVER_PORT }}"
+            exit 1
+          fi
+          echo "✅ SSH host key verified in known_hosts"
 
       # ─────────────────────────────────────
       # نسخ احتياطي للنسخة الحالية (rollback)
