@@ -66,6 +66,7 @@ export function TeacherWorkspace() {
   const [date, setDate] = useState("");
   const [state, setState] = useState("loading");
   const [message, setMessage] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const load = useCallback(async (next = {}) => {
     setState("loading"); setMessage("");
@@ -110,7 +111,6 @@ export function TeacherWorkspace() {
   const heard = students.filter((student) => student.quran.type).length;
   const isQuranDay = new Date(`${date}T12:00:00+03:00`).getUTCDay() === 0;
 
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const requestLogout = () => setShowLogoutConfirm(true);
 
   return <div className="teacher-shell teacher-workspace teacher-simple" dir="rtl">
