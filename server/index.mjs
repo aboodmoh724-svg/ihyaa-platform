@@ -357,6 +357,11 @@ const adminData = createAdminDataHandlers({ pool, currentUser, json, body, hashP
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (secureCookie) res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
   try {
     if (!checkOrigin(req)) return json(res, 403, { error: "الطلب غير مسموح." });
     if (req.method === "GET" && url.pathname === "/api/health") return json(res, 200, { ok: true });

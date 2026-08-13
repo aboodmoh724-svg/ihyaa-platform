@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft, BookOpen, CalendarBlank, CaretDown, Check, CheckCircle, Clock,
+  ArrowLeft, BookOpen, CalendarBlank, Check, CheckCircle, Clock,
   EnvelopeSimple, Eye, EyeSlash, Gear, Headphones, House, Lock, Phone, SignIn,
-  SignOut, Sparkle, Student, Trash, User, UserCircle, Users, UsersThree, X,
+  SignOut, Sparkle, User, UserCircle, UsersThree, X,
 } from "@phosphor-icons/react";
 import { dataService } from "./data.js";
 import { AdminWorkspace, TeacherWorkspace } from "./OperationalViews.jsx";
 
-const statusOptions = [
-  { id: "present", label: "حاضر", icon: Check },
-  { id: "absent", label: "غائب", icon: X },
-  { id: "late", label: "متأخر", icon: Clock },
-];
+
 
 function navigate(path) {
   window.history.pushState({}, "", path);
@@ -143,105 +139,7 @@ function ChangePasswordPage() {
   return <main className="password-page" dir="rtl"><form className="login-card" onSubmit={submit}><Logo /><span className="welcome-mark"><Lock size={23} /></span><h1>أنشئ كلمة مرورك</h1><p>هذه خطوة إلزامية عند أول دخول لحماية حسابك.</p><label>كلمة المرور المؤقتة<span className="input-wrap"><Lock /><input type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} /></span></label><label>كلمة المرور الجديدة<span className="input-wrap"><Lock /><input type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></span></label><label>تأكيد كلمة المرور<span className="input-wrap"><Lock /><input type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></span></label>{error && <p className="form-error">{error}</p>}<button className="login-submit" disabled={loading}>{loading ? "جارٍ الحفظ..." : "حفظ ومتابعة"}<ArrowLeft /></button></form></main>;
 }
 
-function StudentAttendance({ index, student, status, disabled, onChange }) {
-  return <article className="student-card"><div className="student-heading"><span className="student-index">{index + 1}</span><h2>{student.name}</h2></div><div className="status-group" role="group" aria-label={`تسجيل حضور ${student.name}`}>{statusOptions.map(({ id, label, icon: Icon }) => <button key={id} type="button" disabled={disabled} className={`status-button status-${id}${status === id ? " is-selected" : ""}`} aria-pressed={status === id} onClick={() => onChange(student.id, id)}>{status === id && <Icon size={19} weight="bold" />}<span>{label}</span></button>)}</div></article>;
-}
 
-function TeacherAttendance() {
-  const [page, setPage] = useState(null);
-  const [attendance, setAttendance] = useState({});
-  const [saveState, setSaveState] = useState("saved");
-  const [notice, setNotice] = useState("");
-  const [dirty, setDirty] = useState(false);
-  const [showSummary, setShowSummary] = useState(false);
-
-  useEffect(() => {
-    dataService.teacherAttendance().then((payload) => {
-      setPage(payload);
-      setAttendance(Object.fromEntries(payload.students.filter((student) => student.status).map((student) => [student.id, student.status])));
-    }).catch((error) => error.status === 401 ? navigate("/login") : setNotice(error.message));
-  }, []);
-
-  useEffect(() => {
-    if (!dirty || !page?.canEdit) return;
-    setSaveState("saving");
-    const timer = window.setTimeout(async () => {
-      try {
-        await dataService.saveAttendance(page.date, Object.entries(attendance).map(([studentId, status]) => ({ studentId, status })));
-        setSaveState("saved"); setDirty(false);
-      } catch (error) { setSaveState("error"); setNotice(error.message); }
-    }, 550);
-    return () => clearTimeout(timer);
-  }, [attendance, dirty, page]);
-
-  if (!page) return <LoadingScreen message={notice || "جارٍ تحميل الحلقة..."} />;
-  const markedCount = Object.keys(attendance).length;
-  const progress = Math.round((markedCount / Math.max(page.students.length, 1)) * 100);
-  const counts = Object.values(attendance).reduce((acc, status) => ({ ...acc, [status]: acc[status] + 1 }), { present: 0, absent: 0, late: 0 });
-  const update = (id, status) => { setAttendance((value) => ({ ...value, [id]: status })); setDirty(true); setNotice(""); };
-  const markAll = () => { setAttendance(Object.fromEntries(page.students.map((student) => [student.id, "present"]))); setDirty(true); setNotice("تم تعيين جميع الطلاب حاضرين. عدّل الاستثناءات الآن."); };
-  const clear = () => { setAttendance({}); setDirty(true); setNotice("تم مسح الاختيارات."); };
-  const finish = () => markedCount < page.students.length ? setNotice(`بقي ${page.students.length - markedCount} طالب دون تسجيل.`) : setShowSummary(true);
-
-  return <div className="teacher-shell" dir="rtl">
-    <header className="teacher-header"><div className="teacher-brand"><Logo light compact /><div><small>مؤسسة إحياء</small><h1>{page.circle.name}</h1><p><CalendarBlank size={19} /> {formatDate(page.date)}</p></div></div><blockquote>وَلِحَامِلِ الْقُرْآنِ <strong>شَرَفٌ</strong> فِي الْأُمَمِ،<br />وَبِهِ <strong>يُعْلَى</strong> مَقَامُ الْمَرْءِ وَيَرْتَقِي.</blockquote><button type="button" className="header-back" onClick={signOut}>الخروج <SignOut size={22} /></button></header>
-    <main className="attendance-page">
-      {!page.canEdit && <div className="notice">يمكنك مراجعة الطلاب الآن، وسيُفتح إدخال الحضور تلقائياً في {formatDate(page.nextSessionDate)}. الدوام يومي السبت والأحد فقط.</div>}
-      <section className="attendance-toolbar"><div className="progress-block"><div className="progress-copy"><p>سُجّل حضور <strong>{markedCount}</strong> من <strong>{page.students.length}</strong> طالبًا</p><span>{progress}%</span></div><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div><div className="bulk-actions"><button disabled={!page.canEdit} className="button button-outline" onClick={markAll}><UsersThree size={23} /> تعيين الجميع حاضرًا</button><button disabled={!page.canEdit} className="button button-quiet" onClick={clear}><Trash size={20} /> مسح الاختيارات</button></div></section>
-      {notice && <div className="notice" role="status">{notice}</div>}
-      <section className="students-grid">{page.students.map((student, index) => <StudentAttendance key={student.id} index={index} student={student} status={attendance[student.id]} disabled={!page.canEdit} onChange={update} />)}</section>
-    </main>
-    <footer className="teacher-footer"><div className={`save-indicator ${saveState}`}><CheckCircle size={23} weight="fill" />{saveState === "saving" ? "جارٍ الحفظ..." : saveState === "error" ? "تعذر الحفظ" : "يُحفظ الحضور تلقائيًا"}</div><button disabled={!page.canEdit} className="button button-primary" onClick={finish}>إنهاء التسجيل <ArrowLeft size={22} /></button></footer>
-    {showSummary && <div className="modal-backdrop" onMouseDown={() => setShowSummary(false)}><section className="summary-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}><CheckCircle className="success-icon" size={43} weight="fill" /><h2>اكتمل تسجيل الحضور</h2><p>حُفظ سجل {page.circle.name} تلقائيًا.</p><div className="summary-counts"><span className="summary-present">{counts.present} حاضر</span><span className="summary-absent">{counts.absent} غائب</span><span className="summary-late">{counts.late} متأخر</span></div><button className="button button-primary modal-action" onClick={() => setShowSummary(false)}>العودة إلى الحلقة</button></section></div>}
-  </div>;
-}
-
-const adminNav = [["اليوم", House], ["الحلقات", BookOpen], ["الطلاب", Users], ["المعلمون", UserCircle]];
-
-function AdminDashboard() {
-  const [active, setActive] = useState("اليوم");
-  const [overview, setOverview] = useState(null);
-  const [error, setError] = useState("");
-  useEffect(() => { dataService.adminOverview().then(setOverview).catch((requestError) => requestError.status === 401 ? navigate("/login") : setError(requestError.message)); }, []);
-  if (!overview) return <LoadingScreen message={error || "جارٍ تحميل بيانات المؤسسة..."} />;
-  const incomplete = overview.circles.filter((circle) => circle.status !== "complete").length;
-  return <div className="admin-shell" dir="rtl">
-    <aside className="admin-sidebar"><Logo light /><nav>{adminNav.map(([label, Icon], index) => <button key={label} className={active === label ? "active" : ""} onClick={() => setActive(label)}><Icon size={24} />{label}{index === 0 && <span />}</button>)}</nav><button type="button" className="admin-logout" onClick={signOut}><SignOut size={21} /> تسجيل الخروج</button></aside>
-    <main className="admin-main">
-      <header className="admin-top"><div><h1>{active === "اليوم" ? "حال المؤسسة" : active}</h1><p><CalendarBlank size={19} /> آخر يوم حلقات: {formatDate(overview.referenceDate, { year: true })}</p></div><div className="admin-profile"><span><UserCircle size={36} /> إدارة مؤسسة إحياء <CaretDown size={17} /></span></div></header>
-      {active === "اليوم" && <AdminToday overview={overview} incomplete={incomplete} />}
-      {active === "الحلقات" && <CirclesView circles={overview.circles} referenceDate={overview.referenceDate} />}
-      {active === "الطلاب" && <DirectoryView title="سجلات الطلاب" count={overview.students.length} headers={["الطالب", "الحلقة", "المعلم"]} rows={overview.students.map((item) => [item.name, item.circleName, item.teacherName || "غير مسند"])} />}
-      {active === "المعلمون" && <DirectoryView title="حسابات المعلمين" count={overview.teachers.length} headers={["المعلم", "اسم المستخدم", "الحلقة", "عدد الطلاب"]} rows={overview.teachers.map((item) => [item.name, item.username, item.circleName || "غير مسند", item.studentCount])} />}
-    </main>
-  </div>;
-}
-
-function AdminToday({ overview, incomplete }) {
-  const rate = overview.totals.recorded ? Math.round((overview.totals.present / overview.totals.recorded) * 100) : 0;
-  return <>
-    <section className="admin-metrics"><article><Users size={25} /><span>الطلاب</span><strong>{overview.stats.students}</strong></article><article><BookOpen size={25} /><span>الحلقات</span><strong>{overview.stats.circles}</strong></article><article><UserCircle size={25} /><span>المعلمون</span><strong>{overview.stats.teachers}</strong></article><article><CheckCircle size={25} /><span>نسبة الحضور المسجّل</span><strong>{rate}%</strong></article></section>
-    <section className="daily-brief"><h2>{overview.watchlist.length ? `هناك ${overview.watchlist.length} حالات تستحق المتابعة.` : "لا توجد حالات متكررة تستحق المتابعة."}</h2><p>الأرقام أدناه مأخوذة مباشرة من السجل التاريخي حتى {formatDate(overview.referenceDate)}.</p><span /></section>
-    <section className="admin-grid">
-      <article className="priority-card panel"><h2>أولوية المتابعة</h2><div className="priority-row red"><BookOpen /><p>{incomplete} حلقات لم يكتمل فيها تسجيل جميع الطلاب في آخر يوم.</p></div><div className="priority-row amber"><User /><p>{overview.watchlist.length} طلاب تكرر غيابهم مرتين أو أكثر خلال آخر أربع جلسات.</p></div><div className="priority-row blue"><Users /><p>حلقة واحدة غير مسندة إلى معلم: حلقة برستيج.</p></div></article>
-      <article className="timeline-card panel"><h2>ملخص آخر يوم</h2><div><strong>{overview.totals.present}</strong><span /><p>حاضر</p></div><div><strong>{overview.totals.absent}</strong><span /><p>غائب</p></div><div><strong>{overview.totals.late}</strong><span /><p>متأخر</p></div><div><strong>{overview.totals.recorded}</strong><span /><p>إجمالي السجلات</p></div></article>
-    </section>
-    <CirclesView circles={overview.circles} referenceDate={overview.referenceDate} embedded />
-    {overview.watchlist.length > 0 && <section className="panel watchlist-panel"><h2>حالات الغياب المتكرر</h2><div className="watchlist-grid">{overview.watchlist.map((student) => <article key={student.id}><Student size={24} /><div><strong>{student.name}</strong><small>{student.circleName}</small></div><span>{student.absenceCount} غيابات</span></article>)}</div></section>}
-  </>;
-}
-
-function CirclesView({ circles, referenceDate, embedded = false }) {
-  return <section className={`${embedded ? "circles-panel" : "directory-panel"} panel`}><div className="panel-title"><div><h2>{embedded ? "الحلقات في آخر يوم" : "الحلقات"}</h2>{!embedded && <p>حالة التسجيل بتاريخ {formatDate(referenceDate)}</p>}</div><span>{circles.length} حلقات</span></div>{circles.map((circle) => <div className="circle-live-row" key={circle.id}><span className={`circle-icon ${circle.status}`}><BookOpen /></span><span className="circle-copy"><strong>{circle.name}</strong><small>{circle.teacherName || "لم يُسند معلم بعد"} · {circle.studentCount} طالب</small></span><span className={`circle-status ${circle.status}`}>{circle.status === "complete" ? "مكتمل" : circle.status === "partial" ? `${circle.recordedCount} من ${circle.studentCount}` : "لم يُسجّل"}</span><span className="circle-numbers">{circle.present} حاضر · {circle.absent} غائب · {circle.late} متأخر</span></div>)}</section>;
-}
-
-function DirectoryView({ title, count, headers, rows }) {
-  return <section className="directory-panel panel" style={{ "--columns": headers.length }}><div className="panel-title"><h2>{title}</h2><span>{count} سجل</span></div><div className="directory-table" role="table"><div className="directory-head" role="row">{headers.map((header) => <strong key={header} role="columnheader">{header}</strong>)}</div>{rows.map((row, index) => <div className="directory-row" role="row" key={`${row[0]}-${index}`}>{row.map((cell, cellIndex) => <span role="cell" key={`${cell}-${cellIndex}`}>{cell}</span>)}</div>)}</div></section>;
-}
-
-function LoadingScreen({ message }) {
-  return <main className="loading-page" dir="rtl"><Logo /><span className="loading-dot" /><p>{message}</p></main>;
-}
 
 function NotFound() { return <main className="not-found" dir="rtl"><Logo /><h1>هذه الصفحة غير موجودة</h1><LinkButton to="/" className="primary-action">العودة للرئيسية <ArrowLeft /></LinkButton></main>; }
 

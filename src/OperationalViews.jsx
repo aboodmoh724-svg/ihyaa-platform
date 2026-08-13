@@ -28,6 +28,11 @@ async function signOut() {
 }
 
 function LogoutConfirmModal({ onConfirm, onCancel }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onCancel(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
   return <div className="modal-backdrop logout-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onCancel()}>
     <section className="logout-confirm-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
       <div className="logout-confirm-icon"><Warning size={40} weight="fill" /></div>
@@ -67,6 +72,13 @@ export function TeacherWorkspace() {
   const [state, setState] = useState("loading");
   const [message, setMessage] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const dirty = useRef(false);
+
+  useEffect(() => {
+    const warn = (e) => { if (dirty.current) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
 
   const load = useCallback(async (next = {}) => {
     setState("loading"); setMessage("");
@@ -84,7 +96,7 @@ export function TeacherWorkspace() {
 
   function updateStudent(id, section, field, value) {
     setStudents((items) => items.map((item) => item.id === id ? { ...item, [section]: { ...item[section], [field]: value } } : item));
-    setMessage("");
+    setMessage(""); dirty.current = true;
   }
 
   function updateAttendanceStatus(id, status) {
@@ -93,7 +105,7 @@ export function TeacherWorkspace() {
       attendance: { ...item.attendance, status },
       quran: status === "present" ? item.quran : { type: "", content: "", surah: "", from: "", to: "", performance: "", note: "" },
     } : item));
-    setMessage("");
+    setMessage(""); dirty.current = true;
   }
 
   async function saveEntries(entries, successMessage) {
@@ -102,7 +114,7 @@ export function TeacherWorkspace() {
       await dataService.saveTeacherSession({ circleId, date, students: entries.map(({ id, attendance, quran }) => ({ studentId: id, attendance, quran })) });
       const payload = await dataService.teacherAttendance({ circleId, date });
       setPage(payload); setStudents(payload.students.map(blankStudent));
-      setState("saved"); setMessage(successMessage);
+      setState("saved"); setMessage(successMessage); dirty.current = false;
     } catch (error) { setState("error"); setMessage(error.message); }
   }
 
@@ -272,7 +284,7 @@ export function AdminWorkspace() {
   return <div className="admin-shell admin-workspace" dir="rtl">
     <aside className="admin-sidebar"><Brand /><nav>{adminNav.map(([label, Icon]) => <button key={label} className={active === label ? "active" : ""} onClick={() => open(label)}><Icon size={23} />{label}<span /></button>)}</nav><button type="button" className="admin-logout" onClick={requestLogout}><SignOut size={21} /> تسجيل الخروج</button></aside>
     <main className="admin-main">
-      <header className="admin-top"><div><h1>{active === "اليوم" ? "بِحُسنِ إدارتك يستقيمُ العمل ويزدهرُ أثرُ القرآن" : active}</h1><p><CalendarBlank size={19} /> آخر بيانات مسجلة: {formatDate(overview.referenceDate, true)}</p></div><div className="admin-profile"><span><UserCircle size={36} /> إدارة مؤسسة إحياء</span><button type="button" className="mobile-logout" onClick={requestLogout} aria-label="تسجيل الخروج"><SignOut size={22} /></button></div></header>
+      <header className="admin-top"><div><h1>{active === "اليوم" ? "بِحُسنِ إدارتك يستقيمُ العمل ويزدهرُ أثرُ القرآن" : active}</h1><p><CalendarBlank size={19} /> آخر جلسة مسجلة: {formatDate(overview.referenceDate, true)}</p></div><div className="admin-profile"><span><UserCircle size={36} /> إدارة مؤسسة إحياء</span><button type="button" className="mobile-logout" onClick={requestLogout} aria-label="تسجيل الخروج"><SignOut size={22} /></button></div></header>
       {message && <div className="notice notice-error">{message}</div>}
       {successMessage && <div className="notice notice-success" role="status">{successMessage}</div>}
       {active === "اليوم" && <AdminHome overview={overview} open={open} />}
@@ -362,6 +374,12 @@ function EntityEditor({ editor, overview, onClose, onSave }) {
     setSaving(false);
   }
 
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <form className={`entity-modal entity-${editor.kind}`} onSubmit={submit}>
       <header className="entity-modal-header"><span>{editor.kind === "circle" ? <BookOpen /> : editor.kind === "teacher" ? <UserCircle /> : <Student />}</span><div><h2>{title}</h2><p>{intro}</p></div><button type="button" className="modal-close" aria-label="إغلاق" onClick={onClose}><X /></button></header>
@@ -385,7 +403,7 @@ function EntityEditor({ editor, overview, onClose, onSave }) {
           <label>اسم المعلم<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
           <label>اسم المستخدم أو البريد<input required dir="ltr" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} placeholder="moh@alehyaa.com" /></label>
           {item.id && !form.changePassword && <button type="button" className="change-password-toggle wide" onClick={() => setForm({ ...form, changePassword: true, password: "" })}>تغيير كلمة المرور</button>}
-          {form.changePassword && <label className="wide">{item.id ? "كلمة المرور الجديدة" : "كلمة مرور الحساب"}<input required minLength="5" dir="ltr" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>}
+          {form.changePassword && <label className="wide">{item.id ? "كلمة المرور الجديدة" : "كلمة مرور الحساب"}<input required minLength="10" dir="ltr" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="10 أحرف على الأقل" /></label>}
           {item.id && <label className="switch-label wide"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} /><span><strong>الحساب نشط</strong><small>يمكن للمعلم تسجيل الدخول والوصول إلى حلقاته</small></span></label>}
           <p className="form-hint wide">يمكن حفظ الاسم واسم المستخدم دون إدخال كلمة المرور. يقبل اسمًا إنجليزيًا أو بريدًا مثل moh@alehyaa.com.</p>
         </div>}

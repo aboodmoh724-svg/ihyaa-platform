@@ -1,9 +1,16 @@
 async function request(path, options = {}) {
-  const response = await fetch(`/api${path}`, {
-    credentials: "include",
-    headers: options.body ? { "content-type": "application/json", ...options.headers } : options.headers,
-    ...options,
-  });
+  let response;
+  try {
+    response = await fetch(`/api${path}`, {
+      credentials: "include",
+      headers: options.body ? { "content-type": "application/json", ...options.headers } : options.headers,
+      ...options,
+    });
+  } catch {
+    const error = new Error("تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وأعد المحاولة.");
+    error.status = 0;
+    throw error;
+  }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(payload.error || "تعذر إكمال الطلب.");
