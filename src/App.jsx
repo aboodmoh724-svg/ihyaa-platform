@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, BookOpen, Books, CalendarBlank, Check, CheckCircle, Clock,
-  Compass, EnvelopeSimple, Eye, EyeSlash, Gear, Headphones, Heart, House, Lock, Phone, SignIn,
-  SignOut, Sparkle, User, UserCircle, UsersThree, X,
+  Compass, EnvelopeSimple, Eye, EyeSlash, Gear, Headphones, Heart, House, Lock, Phone,
+  ShieldCheck, SignIn, SignOut, Sparkle, User, UserCircle, UsersThree, X,
 } from "@phosphor-icons/react";
 import { dataService } from "./data.js";
 import { AdminWorkspace, TeacherWorkspace } from "./OperationalViews.jsx";
