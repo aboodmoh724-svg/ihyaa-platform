@@ -41,120 +41,34 @@ async function signOut() {
   try { await dataService.signOut(); } finally { navigate("/login"); }
 }
 
-const DEPARTMENTS_DATA = {
-  boys: {
-    id: "boys",
-    title: "قسم الفتية",
-    age: "13 – 17 عاماً",
-    tagline: "الانتقال من التوجيه الخارجي إلى الرقابة الذاتية",
-    summary: "بناء الفتى بناءً رصيناً خالياً من أدران البيئة المحيطة، وتعزيز صلته بالله والقرآن، واكتشاف مواهبه وقدراته وتوجيهها بأحدث الطرق التربوية.",
-    outcomes: [
-      { title: "تعميق الصلة بالله", desc: "ترسيخ أداء الواجبات، واجتناب المحرمات، وتزكية النفس." },
-      { title: "شخصية سوية متزنة", desc: "بناء نفسي وسلوكي متوازن قادر على قيادة النفس ومواجهة الضغوط." },
-      { title: "التطوير المهاري", desc: "اكتشاف نقاط القوة والتميز والمواهب وتنميتها بما يلائم متطلبات العصر." },
-      { title: "معرفة إسلامية أصيلة", desc: "تلقي المعارف الشرعية من مصادرها الأصلية في إطار ما لا يسع المسلم جهله." },
-    ],
-    activities: [
-      "حلقات قرآنية أسبوعية وتدبرية",
-      "مبيتات تربوية قصيرة وليالي إيمانية",
-      "مخيمات معايشة مكثفة (مثل مخيم معالم)",
-      "ورش عمل مهارية وفكرية وتدريبية",
-    ],
-    whatsappMsg: "السلام عليكم، أود الاستفسار والتسجيل في قسم الفتية (13 - 17 عاماً)",
-  },
-  early: {
-    id: "early",
-    title: "قسم الطليعة",
-    age: "8 – 12 عاماً",
-    tagline: "تأسيس الدرع الإيماني والوجداني الواقي",
-    summary: "تأسيس طليعة البراعم تأسيساً إيمانياً ووجدانياً يكون لهم درعاً واقياً أمام تحديات الواقع، واحتضانهم في بيئة منضبطة وصحبة صالحة على مائدة القرآن.",
-    outcomes: [
-      { title: "تنشئة قرآنية مباركة", desc: "الارتباط بحفظ القرآن الكريم وفهمه وتدبره منذ الصغر." },
-      { title: "غرس حب الإسلام", desc: "ترسيخ محبة الله ورسوله في قلب الناشئ بطرق محببة وتطبيقية." },
-      { title: "قيم تأسيسية أصيلة", desc: "بناء العادات والسلوكيات الإيجابية التي تصاحب الطفل طيلة حياته." },
-      { title: "الصحبة الصالحة", desc: "إحاطة الطفل ببيئة نقية تدفعه نحو الخير وتبعده عن المشتتات." },
-    ],
-    activities: [
-      "حلقات تحفيظ وتلقين متقن",
-      "أنشطة تربوية ترفيهية تفاعلية",
-      "حقائب معرفية مبسطة في السيرة والآداب",
-      "مسابقات تحفيزية وبناء العادات اليومية",
-    ],
-    whatsappMsg: "السلام عليكم، أود الاستفسار والتسجيل في قسم الطليعة (8 - 12 عاماً)",
-  },
-  girls: {
-    id: "girls",
-    title: "قسم الفتيات",
-    age: "13 – 17 عاماً",
-    tagline: "بناء شامل ومتزن للفتاة المسلمة",
-    summary: "بناء شخصية الفتاة بناءً شاملاً ومتكاملاً ومتزناً، وإعداد الفتاة المسلمة للقيام بأدوارها في الحياة والأسرة والمجتمع من خلال أحدث الاتجاهات والممارسات التربوية.",
-    outcomes: [
-      { title: "بناء إيماني عميق", desc: "غرس الحياء والعفة والاعتزاز بالهوية الإسلامية." },
-      { title: "اتزان نفسي وعاطفي", desc: "تنمية مهارات إدارة الذات والتعامل الواعي مع متغيرات العصر." },
-      { title: "الوعي الأسري والاجتماعي", desc: "تأهيل الفتاة لتكون لبنة صالحة ومؤثرة إيجابياً في أسرتها ومجتمعها." },
-      { title: "مهارات حياتية وقيادية", desc: "صقل المواهب القيادية والتنظيمية والإبداعية لدى الفتيات." },
-    ],
-    activities: [
-      "حلقات تدبرية وقرآنية أسبوعية",
-      "ليالي ومخيمات إيمانية خاصة",
-      "دورات مهارية في إدارة الذات والأسرة",
-      "لقاءات حوارية في بيئة آمنة وحاضنة",
-    ],
-    whatsappMsg: "السلام عليكم، أود الاستفسار والتسجيل في قسم الفتيات (13 - 17 عاماً)",
-  },
-  majalis: {
-    id: "majalis",
-    title: "قسم المجالس العلمية",
-    age: "متاح للرجال والنساء",
-    tagline: "إعادة المجتمع لمركزية العلم والعلماء",
-    summary: "إعادة المجتمع المسلم في بلاد المهجر إلى مركزية العلم والعلماء والتفقه في الدين، عبر مجالس علمية أسبوعية منتظمة لنخبة من المشايخ الفضلاء.",
-    outcomes: [
-      { title: "تفسير وتدارس القرآن", desc: "الغوص في معاني الآيات وتدبرها وتطبيقها في واقع الحياة." },
-      { title: "شرح مدارج السالكين", desc: "تزكية النفوس ومنازل السائرين إلى الله وفق المنهج السلفي النقي." },
-      { title: "السيرة النبوية العطرة", desc: "استخلاص العبر والدروس التربوية والقيادية من حياة النبي ﷺ." },
-      { title: "أنوار الصحابة والقدوات", desc: "ربط الجيل بسير الرعيل الأول ونماذج الثبات والبذل." },
-    ],
-    activities: [
-      "مجالس علمية أسبوعية حضورية وافتراضية",
-      "جلسات تدارس وحوار مفتوح مع المشايخ",
-      "ملخصات ومقررات علمية منهجية",
-      "مفتوحة لكافة أفراد الأسرة دون تقيد عمري",
-    ],
-    whatsappMsg: "السلام عليكم، أود الاستفسار عن مواعيد وبرامج المجالس العلمية",
-  },
-};
-
 function PublicHome() {
-  const [selectedDept, setSelectedDept] = useState("boys");
-  const currentDept = DEPARTMENTS_DATA[selectedDept];
-
   return <div className="public-page" dir="rtl">
     <header className="public-nav">
       <Logo />
       <nav aria-label="التنقل الرئيسي">
         <a href="#about">عن المؤسسة</a>
-        <a href="#journey">مسار الطالب</a>
-        <a href="#departments">أقسامنا</a>
-        <a href="#maelem">مخيم معالم</a>
-        <a href="#contact">تواصل معنا</a>
+        <a href="#departments">أقسام المؤسسة</a>
+        <a href="#projects">المشاريع والبرامج</a>
+        <a href="#methodology">المنهج التربوي</a>
+        <a href="#contact">التواصل</a>
       </nav>
       <LinkButton to="/login" className="outline-action"><SignIn size={22} /> دخول المنصة</LinkButton>
     </header>
 
     <main>
-      {/* Hero Section */}
+      {/* 1. Institutional Hero Section */}
       <section className="public-hero">
         <div className="hero-copy">
-          <span className="section-kicker">مؤسسة إحياء التربوية</span>
+          <span className="section-kicker">مؤسسة إحياء</span>
           <h1>إحياء معالم الدين<br />في نفوس الجيل</h1>
           <p>نهدف إلى إحياء معالم الدين من جديد في نفوس شرائح المجتمع المسلم، منطلقين من هدايات الوحي وأنوار السنّة، لسد الاحتياج وضبط البوصلة فكراً وجهداً.</p>
           <div className="hero-actions">
             <LinkButton to="/login" className="primary-action">دخول المنصة <ArrowLeft size={21} /></LinkButton>
-            <a className="outline-action" href="#journey">خريطة البناء التربوي <ArrowLeft size={21} /></a>
+            <a className="outline-action" href="#about">عن المؤسسة ورسالتها <ArrowLeft size={21} /></a>
           </div>
           <div className="hero-badges">
             <span className="gold-tag"><Sparkle size={16} weight="fill" /> جيلٌ على خُطى السابقين</span>
-            <span className="sub-tag">التربية بالمعايشة • الرقابة الذاتية • إتقان القرآن</span>
+            <span className="sub-tag">الارتباط بالوحي • التربية بالمعايشة • التحصين والتمكين</span>
           </div>
         </div>
         <div className="hero-emblem" aria-hidden="true">
@@ -163,408 +77,320 @@ function PublicHome() {
         </div>
       </section>
 
-      {/* About Section */}
+      {/* 2. About & Mission */}
       <section className="care-section" id="about">
         <div className="section-heading">
-          <span>عن المؤسسة ورسالتها</span>
-          <h2>رعايةٌ وبناء، يَصِلُ العلمَ بالعمل</h2>
+          <span>الرسالة والأهداف</span>
+          <h2>عن المؤسسة ورسالتها</h2>
           <p className="section-lead">انطلاقاً من الشعور بالمسؤولية تجاه واقع الأمة وضياع البوصلة وتشتت الجهود، جاءت مؤسسة إحياء لتكثيف الجهود التربوية والمشاريع الهادفة، ولسد هذا الاحتياج وضبط البوصلة فكراً وجهداً، لتنشئة جيلٍ قرآنيٍّ راسخ يعتز بدينه وينفع مجتمعه.</p>
         </div>
         <div className="care-grid">
           <article className="care-card">
             <div className="care-icon-wrap"><BookOpen size={36} /></div>
             <h3>الارتباط بالوحي والسنّة</h3>
-            <p>ربط الشباب بالقرآن والعمل به، وبالسنة المطهرة كمرجع ثانٍ، ومنطلقاً للهداية والنور والاستقامة في كل مناحي الحياة.</p>
+            <p>ربط الشباب بالقرآن الكريم والعمل به، وبالسنة المطهرة كمرجع ثانٍ، ومنطلقاً للهداية والنور والاستقامة في كل مناحي الحياة.</p>
           </article>
           <article className="care-card">
             <div className="care-icon-wrap"><UsersThree size={36} /></div>
-            <h3>التربية بالمعايشة الحقيقية</h3>
-            <p>صحبة تربوية مرافقة من خلال الليالي الإيمانية والمخيمات والمتابعة المستمرة لصناعة رفيق صادق للقرآن.</p>
+            <h3>التربية بالمعايشة</h3>
+            <p>صحبة تربوية مرافقة من خلال الليالي الإيمانية والمخيمات والمتابعة الميدانية المستمرة لصناعة رفيق صادق للقرآن.</p>
           </article>
           <article className="care-card">
-            <div className="care-icon-wrap"><Sparkle size={36} /></div>
-            <h3>التحصين والتمكين المهاري</h3>
-            <p>تحصين الشباب من فتن الشهوات والشبهات، والعمل على التطوير المهاري لاكتشاف نقاط التميز وتوجيهها للمجتمع.</p>
+            <div className="care-icon-wrap"><ShieldCheck size={36} /></div>
+            <h3>التحصين والتمكين</h3>
+            <p>تحصين الشباب من فتن الشهوات والشبهات، والعمل على التطوير المهاري لاكتشاف نقاط التميز وتوجيه الطاقات نحو البناء.</p>
           </article>
         </div>
       </section>
 
-      {/* Student Growth Journey */}
-      <section className="journey-section" id="journey">
-        <div className="section-heading">
-          <span>التدرج التربوي</span>
-          <h2>خريطة مسار الطالب في إحياء</h2>
-          <p className="section-lead">نرافق الطالب عبر خطة بناء محكمة تنتقل به مرحلة بمرحلة من غرس الفطرة حتى النضج والرسوخ القيادي.</p>
-        </div>
-        <div className="journey-timeline">
-          <div className="journey-step">
-            <div className="step-badge">المرحلة 01</div>
-            <div className="step-card">
-              <span className="step-age">8 – 12 عاماً • قسم الطليعة</span>
-              <h3>الغرس وحصن الفطرة</h3>
-              <p>تنشئة على مائدة القرآن، تحصين الفطرة من المشتتات، وغرس محبة الله ورسوله وبناء العادات الصالحة مع صحبة نقية.</p>
-              <ul className="step-checkpoints">
-                <li><CheckCircle size={17} weight="fill" /> مائدة القرآن وتلقينه</li>
-                <li><CheckCircle size={17} weight="fill" /> غرس قيم الاستقامة</li>
-                <li><CheckCircle size={17} weight="fill" /> بيئة إيمانية حاضنة</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="journey-arrow" aria-hidden="true">➔</div>
-
-          <div className="journey-step highlight">
-            <div className="step-badge">المرحلة 02</div>
-            <div className="step-card">
-              <span className="step-age">13 – 17 عاماً • الفتية والفتيات</span>
-              <h3>الرقابة الداخلية والتحصين</h3>
-              <p>الانتقال بالفتى والفتاة من الاعتماد على التوجيه الخارجي إلى الرقابة الذاتية، ومواجهة فتن العصر باليقين والتفكير الناقد.</p>
-              <ul className="step-checkpoints">
-                <li><CheckCircle size={17} weight="fill" /> معايشة ومخيمات مكثفة</li>
-                <li><CheckCircle size={17} weight="fill" /> كشف فتن الشبهات والشهوات</li>
-                <li><CheckCircle size={17} weight="fill" /> الكسب الحلال والعمل الحر</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="journey-arrow" aria-hidden="true">➔</div>
-
-          <div className="journey-step">
-            <div className="step-badge">المرحلة 03</div>
-            <div className="step-card">
-              <span className="step-age">الشباب والعموم • المجالس العلمية</span>
-              <h3>الرسوخ والأثر الممتد</h3>
-              <p>إعادة المجتمع إلى مركزية العلم والعلماء، تدارس الوحي والسيرة ومدارج السالكين، ليكون الشاب معلماً هادياً في مجتمعه.</p>
-              <ul className="step-checkpoints">
-                <li><CheckCircle size={17} weight="fill" /> تدارس التفسير والسيرة</li>
-                <li><CheckCircle size={17} weight="fill" /> تزكية النفس والتفقه</li>
-                <li><CheckCircle size={17} weight="fill" /> صناعة القدوات والأثر</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Interactive Department Explorer */}
+      {/* 3. Institutional Departments (4 Pillars) */}
       <section className="programs-section" id="departments">
         <div className="section-heading">
-          <span>استكشف المسارات</span>
+          <span>الهيكل التربوي</span>
           <h2>أقسام المؤسسة التخصصية</h2>
-          <p className="section-lead">اختر القسم للتعرف على أهدافه ومخرجاته العملية وأنشطته المستمرة.</p>
+          <p className="section-lead">تعمل المؤسسة عبر أربعة أقسام متكاملة تغطي مختلف المراحل العمرية واحتياجات الأسرة والمجتمع وفق معايير تربوية رصينة.</p>
         </div>
 
-        <div className="dept-tabs-nav" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={selectedDept === "boys"}
-            className={`dept-tab-btn ${selectedDept === "boys" ? "active" : ""}`}
-            onClick={() => setSelectedDept("boys")}
-          >
-            <UsersThree size={24} />
-            <div>
-              <strong>قسم الفتية</strong>
-              <small>13 – 17 عاماً</small>
+        <div className="departments-grid">
+          {/* Department 1: Boys */}
+          <article className="dept-card">
+            <div className="dept-header">
+              <span className="dept-badge">13 – 17 عاماً</span>
+              <UsersThree size={36} className="dept-icon" />
             </div>
-          </button>
+            <h3>قسم الفتية</h3>
+            <p>بناء الفتى بناءً رصيناً خالياً من أدران البيئة المحيطة، وتعزيز صلته بالله والقرآن، والانتقال به من التوجيه الخارجي إلى الرقابة الذاتية، واكتشاف مواهبه وقدراته وتنميتها بأحدث الوسائل الحديثة.</p>
+            <div className="dept-tags">
+              <span>المحور الإيماني وتزكية النفس</span>
+              <span>المحور السلوكي والنفسي</span>
+              <span>المحور المهاري واكتشاف التميز</span>
+              <span>المحور المعرفي الأصيل</span>
+            </div>
+          </article>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={selectedDept === "early"}
-            className={`dept-tab-btn ${selectedDept === "early" ? "active" : ""}`}
-            onClick={() => setSelectedDept("early")}
-          >
-            <Compass size={24} />
-            <div>
-              <strong>قسم الطليعة</strong>
-              <small>8 – 12 عاماً</small>
+          {/* Department 2: Early Stage */}
+          <article className="dept-card">
+            <div className="dept-header">
+              <span className="dept-badge">8 – 12 عاماً</span>
+              <Compass size={36} className="dept-icon" />
             </div>
-          </button>
+            <h3>قسم الطليعة</h3>
+            <p>تأسيس طليعة هذا القسم تأسيساً إيمانياً ووجدانياً يكون لهم الدرع الواقي أمام تحديات الواقع، واحتضانهم في بيئة منضبطة تكون حاجزاً بينهم وبين الفتن المعاصرة، وتنشئتهم على مائدة القرآن حفظاً وتدبراً.</p>
+            <div className="dept-tags">
+              <span>تنشئة على مائدة القرآن</span>
+              <span>غرس قيم الاستقامة</span>
+              <span>غرس حب الإسلام</span>
+              <span>الإحاطة بالصحبة الصالحة</span>
+            </div>
+          </article>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={selectedDept === "girls"}
-            className={`dept-tab-btn ${selectedDept === "girls" ? "active" : ""}`}
-            onClick={() => setSelectedDept("girls")}
-          >
-            <Heart size={24} />
-            <div>
-              <strong>قسم الفتيات</strong>
-              <small>13 – 17 عاماً</small>
+          {/* Department 3: Girls */}
+          <article className="dept-card">
+            <div className="dept-header">
+              <span className="dept-badge">13 – 17 عاماً</span>
+              <Heart size={36} className="dept-icon" />
             </div>
-          </button>
+            <h3>قسم الفتيات</h3>
+            <p>بناء شخصية الفتاة بناءً شاملاً ومتكاملاً ومتزناً، وإعداد الفتاة المسلمة للقيام بأدوارها الإيمانية والأسرية والمجتمعية في الحياة، من خلال أحدث الاتجاهات والممارسات التربوية الحاضنة.</p>
+            <div className="dept-tags">
+              <span>البناء الإيماني والعاطفي</span>
+              <span>المجال الأسري والاجتماعي</span>
+              <span>إدارة الذات وبناء الوعي</span>
+              <span>المخيمات والليالي الإيمانية</span>
+            </div>
+          </article>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={selectedDept === "majalis"}
-            className={`dept-tab-btn ${selectedDept === "majalis" ? "active" : ""}`}
-            onClick={() => setSelectedDept("majalis")}
-          >
-            <Books size={24} />
-            <div>
-              <strong>المجالس العلمية</strong>
-              <small>للرجال والنساء</small>
+          {/* Department 4: Scholarly Assemblies */}
+          <article className="dept-card">
+            <div className="dept-header">
+              <span className="dept-badge highlight">عام للرجال والنساء</span>
+              <Books size={36} className="dept-icon" />
             </div>
-          </button>
+            <h3>قسم المجالس العلمية</h3>
+            <p>إعادة المجتمع المسلم في بلاد المهجر إلى مركزية العلم والعلماء، والتفقه في الدين من مصادره النقية، عبر مجالس علمية أسبوعية منتظمة لنخبة من المشايخ الفضلاء، وهي مفتوحة لعموم المجتمع دون تقيد عمري.</p>
+            <div className="dept-tags">
+              <span>تفسير وتدارس سور القرآن</span>
+              <span>شرح كتاب مدارج السالكين</span>
+              <span>مجالس السيرة النبوية</span>
+              <span>مجالس أنوار الصحابة</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {/* 4. Projects & Educational Programs */}
+      <section className="projects-section" id="projects">
+        <div className="section-heading">
+          <span>العمل الميداني والمشاريع</span>
+          <h2>المشاريع والبرامج التربوية</h2>
+          <p className="section-lead">تترجم المؤسسة أهداف أقسامها إلى باقة متكاملة من المشاريع الميدانية والمخيمات المعايشة والبرامج العلمية المستمرة.</p>
         </div>
 
-        {/* Selected Department Showcase Panel */}
-        <div className="dept-showcase-panel">
-          <div className="showcase-header">
-            <div>
-              <span className="showcase-badge">{currentDept.age}</span>
-              <h3>{currentDept.title}</h3>
-              <p className="showcase-tagline">✦ {currentDept.tagline}</p>
+        <div className="projects-container">
+          {/* Featured Project: Ma'alem Camp */}
+          <article className="project-feature-card">
+            <div className="project-feature-header">
+              <div className="pf-badge-group">
+                <span className="project-pill highlight">مشروع رائد</span>
+                <span className="project-pill">مخيمات المعايشة المكثفة</span>
+                <span className="project-pill">الفتيان 13 – 17 عاماً</span>
+              </div>
+              <h3>مخيم مَعَالِم (1) التربوي</h3>
+              <p className="pf-quote">«لسنا هنا لنكثر العابرين... بل لنخرج معالم على الطريق»</p>
             </div>
-            <a
-              href={`https://wa.me/905375862201?text=${encodeURIComponent(currentDept.whatsappMsg)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="primary-action dept-cta"
-            >
-              استفسر أو سجّل في هذا القسم <ArrowLeft size={19} />
-            </a>
-          </div>
 
-          <p className="showcase-summary">{currentDept.summary}</p>
-
-          <div className="showcase-content-grid">
-            <div className="outcomes-box">
-              <h4><Sparkle size={20} /> مخرجات المسار وأهدافه</h4>
-              <div className="outcomes-grid">
-                {currentDept.outcomes.map((item, idx) => (
-                  <div key={idx} className="outcome-item">
-                    <span className="outcome-num">0{idx + 1}</span>
-                    <div>
-                      <h5>{item.title}</h5>
-                      <p>{item.desc}</p>
-                    </div>
+            <div className="project-feature-body">
+              <div className="pf-overview">
+                <p>مشروع معايشة تربوية مكثفة يمتد على مدار <strong>20 يوماً متواصلة</strong>، يهدف إلى معالجة أزمة الثبات والانتقال بالفتى من التوجيه الخارجي إلى الرقابة الذاتية عبر منظومة متكاملة من المحاور الإيمانية والقرآنية والفكرية والسلوكية والمهارية.</p>
+                
+                <div className="pf-key-points">
+                  <div className="k-box">
+                    <small>القيمة المركزية</small>
+                    <strong>الإِسْتِقَامَة</strong>
+                    <span>﴿فَاسْتَقِمْ كَمَا أُمِرْتَ﴾</span>
                   </div>
-                ))}
+                  <div className="k-box">
+                    <small>السور المركزية</small>
+                    <strong>الأنبياء & العنكبوت</strong>
+                    <span>تدبراً وسنن ثبات ومنهاج حياة</span>
+                  </div>
+                  <div className="k-box">
+                    <small>الإتقان القرآني</small>
+                    <strong>مراجعة 10 أجزاء</strong>
+                    <span>تسميع فردي وجماعي منضبط</span>
+                  </div>
+                  <div className="k-box">
+                    <small>محاور البناء</small>
+                    <strong>11 محوراً استراتيجياً</strong>
+                    <span>إيماني، فكري، عمل حر، وسلوكي</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pf-axes-summary">
+                <h4>محاور المعايشة في مخيم معالم:</h4>
+                <div className="pf-tags-grid">
+                  <span>المحور الإيماني والخلوات</span>
+                  <span>تدبر السنن القرآنية</span>
+                  <span>كشف فتن الشبهات والشهوات</span>
+                  <span>صناعة اليقين والتفكير الناقد</span>
+                  <span>الانضباط ومقاومة التسويف</span>
+                  <span>فن النهوض بعد التعثر</span>
+                  <span>العمل الحر والكسب الحلال</span>
+                  <span>صناعة الأخوة والعمل الجماعي</span>
+                  <span>دراسة سير الأنبياء والقدوات</span>
+                </div>
               </div>
             </div>
+          </article>
 
-            <div className="activities-box">
-              <h4><Clock size={20} /> الوسائل والأنشطة التربوية</h4>
-              <ul className="activity-list">
-                {currentDept.activities.map((act, idx) => (
-                  <li key={idx}>
-                    <CheckCircle size={19} weight="fill" />
-                    <span>{act}</span>
-                  </li>
-                ))}
+          {/* Other Institutional Projects Grid */}
+          <div className="projects-grid">
+            <article className="project-card">
+              <div className="project-card-header">
+                <span className="p-type">مخيمات ومعايشة</span>
+                <h3>المخيمات الموسمية والتربوية</h3>
+              </div>
+              <p>مخيمات دورية تجمع بين التربية الإيمانية، النشاط البدني، وبناء مهارات العمل الجماعي وتحمل المسؤولية في بيئة منضبطة وآمنة.</p>
+              <ul className="project-features">
+                <li><CheckCircle size={17} weight="fill" /> معايشة ميدانية متكاملة</li>
+                <li><CheckCircle size={17} weight="fill" /> دورات مهارية وتربوية</li>
+                <li><CheckCircle size={17} weight="fill" /> أنشطة رياضية ولياقة بدنية</li>
               </ul>
-              <div className="activity-note">
-                <strong>التربية بالمعايشة:</strong> تعتمد المؤسسة على المبيتات القصيرة الدورية والمخيمات المعايشة كركيزة أساسية لبناء الشخصية.
+            </article>
+
+            <article className="project-card">
+              <div className="project-card-header">
+                <span className="p-type">برامج دورية</span>
+                <h3>المبيتات والليالي الإيمانية</h3>
               </div>
-            </div>
+              <p>برامج مبيت دورية قصيرة المدى تركز على غرس عبادات السر، إحياء قيام الليل، تعميق الأخوة في الله، وكسر حواجز الرسميات بين الطلاب والمربين.</p>
+              <ul className="project-features">
+                <li><CheckCircle size={17} weight="fill" /> إحياء قيام الليل وتزكية النفوس</li>
+                <li><CheckCircle size={17} weight="fill" /> مجالس ذكر ومحاسبة صادقة</li>
+                <li><CheckCircle size={17} weight="fill" /> صناعة الصحبة الصالحة المعينة</li>
+              </ul>
+            </article>
+
+            <article className="project-card">
+              <div className="project-card-header">
+                <span className="p-type">التعليم القرآني</span>
+                <h3>الحلقات والمجالس التدبرية</h3>
+              </div>
+              <p>حلقات قرآنية منتظمة تعقد يومي السبت والأحد للحفظ المتقن، مراجعة المحفوظ، وربط الآيات بالسلوك اليومي وسنن الحياة الواقعية.</p>
+              <ul className="project-features">
+                <li><CheckCircle size={17} weight="fill" /> إقراء وحفظ وتسميع فردي</li>
+                <li><CheckCircle size={17} weight="fill" /> تدبر واستخراج السنن الإلهية</li>
+                <li><CheckCircle size={17} weight="fill" /> متابعة دورية عبر المنصة الرقمية</li>
+              </ul>
+            </article>
+
+            <article className="project-card">
+              <div className="project-card-header">
+                <span className="p-type">العلم الشرعي</span>
+                <h3>المجالس العلمية الأسبوعية</h3>
+              </div>
+              <p>سلسلة دروس منهجية أسبوعية يقدمها نخبة من المشايخ الفضلاء في التفسير وشروح كتب السلوك والحديث والسيرة النبوية العطرة.</p>
+              <ul className="project-features">
+                <li><CheckCircle size={17} weight="fill" /> تفسير وتدارس سور القرآن</li>
+                <li><CheckCircle size={17} weight="fill" /> شرح مدارج السالكين في التزكية</li>
+                <li><CheckCircle size={17} weight="fill" /> فقه السيرة النبوية وأنوار الصحابة</li>
+              </ul>
+            </article>
+
+            <article className="project-card">
+              <div className="project-card-header">
+                <span className="p-type">التأهيل والتمكين</span>
+                <h3>برامج التطوير المهاري والعمل الحر</h3>
+              </div>
+              <p>برامج عملية وتطبيقية تهدف إلى بناء شخصية منتجة تعتمد على نفسها وتفهم قيمة السعي الحلال، إدارة الوقت، ومواجهة فتن العصر.</p>
+              <ul className="project-features">
+                <li><CheckCircle size={17} weight="fill" /> مهارات المبادرة والتفاوض والبيع</li>
+                <li><CheckCircle size={17} weight="fill" /> إدارة المال والادخار والمشاريع المصغرة</li>
+                <li><CheckCircle size={17} weight="fill" /> ورش التفكير الناقد وصناعة اليقين</li>
+              </ul>
+            </article>
           </div>
         </div>
       </section>
 
-      {/* Featured Flagship Project: Ma'alem Camp */}
-      <section className="maelem-section" id="maelem">
+      {/* 5. Pedagogical Framework */}
+      <section className="methodology-section" id="methodology">
         <div className="section-heading">
-          <span>مشاريع إحياء الرائدة</span>
-          <h2>مخيم مَعَالِم (1)</h2>
-          <p className="section-lead">«لسنا هنا لنكثر العابرين... بل لنخرج معالم على الطريق» — بيئة تربوية مكثفة تصنع من الفتى نموذجاً للثبات والاستقامة تحت ظلال الوحي.</p>
+          <span>المرتكزات الحاكمة</span>
+          <h2>المنهج التربوي للمؤسسة</h2>
+          <p className="section-lead">يقوم البناء التربوي في محاضن إحياء على خمسة مرتكزات أساسية متكاملة تصنع الأثر الراسخ في شخصية الطالب.</p>
         </div>
 
-        <div className="maelem-card-featured">
-          {/* Challenge Banner */}
-          <div className="maelem-challenge-banner">
-            <div className="challenge-copy">
-              <span className="challenge-kicker">سؤال التحدي والمنطلق</span>
-              <h3>«في زمن الشاشات والفتن المتلاطمة.. هل يستطيع الفتى أن يثبت؟»</h3>
-              <p>20 يوماً من المعايشة الكاملة تنقل الفتى من التوجيه الخارجي إلى الرقابة الذاتية الصادقة، وتصنع منه شعلة ثبات في مجتمعه.</p>
-            </div>
-            <div className="challenge-quran">
-              <span>القيمة المركزية</span>
-              <strong>الإِسْتِقَامَة</strong>
-              <blockquote>﴿فَاسْتَقِمْ كَمَا أُمِرْتَ﴾</blockquote>
-            </div>
-          </div>
-
-          {/* Quick Stats Grid */}
-          <div className="maelem-stats-grid">
-            <div className="stat-box">
-              <span className="stat-val">20</span>
-              <span className="stat-unit">يوماً متواصلة</span>
-              <p>معايشة وتربية على مدار الساعة</p>
-            </div>
-            <div className="stat-box">
-              <span className="stat-val">10</span>
-              <span className="stat-unit">أجزاء قرآنية</span>
-              <p>مراجعة وإتقان حسب قدرة كل فتى</p>
-            </div>
-            <div className="stat-box">
-              <span className="stat-val">11</span>
-              <span className="stat-unit">محوراً متكاملاً</span>
-              <p>لبناء اليقين والشخصية والمهارة</p>
-            </div>
-            <div className="stat-box">
-              <span className="stat-val">الأنبياء & العنكبوت</span>
-              <span className="stat-unit">السور المركزية</span>
-              <p>تدبراً ومنهاج عمل وسنن الثبات</p>
-            </div>
-          </div>
-
-          {/* Daily Life & Pillars in Ma'alem */}
-          <div className="maelem-body-extended">
-            <div className="camp-daily-schedule">
-              <h3>يومٌ في حياة فتى «مَعَالِم»</h3>
-              <div className="schedule-timeline">
-                <div className="schedule-item">
-                  <div className="sch-icon">🌅</div>
-                  <div>
-                    <h4>الفجر والتلاوة اليومية</h4>
-                    <p>استفتاح اليوم بصلات الفجر والورد القرآني وتدبر سورتي الأنبياء والعنكبوت والتسميع الفردي والجماعي.</p>
-                  </div>
-                </div>
-
-                <div className="schedule-item">
-                  <div className="sch-icon">💡</div>
-                  <div>
-                    <h4>الضحى: ورش اليقين والفكر</h4>
-                    <p>جلسات حوارية حول فتن العصر، الشبهات، كيفية مقاومة التسويف، والتعامل مع الذنب والتوبة العملية.</p>
-                  </div>
-                </div>
-
-                <div className="schedule-item">
-                  <div className="sch-icon">🛠️</div>
-                  <div>
-                    <h4>العصر: الكسب الحلال والمسؤولية</h4>
-                    <p>تطبيق عملي لمشاريع مصغرة وكسب حلال داخل المخيم، تعزيز المبادرة، وحل الخلافات والعمل الجماعي.</p>
-                  </div>
-                </div>
-
-                <div className="schedule-item">
-                  <div className="sch-icon">🌙</div>
-                  <div>
-                    <h4>المساء: دفتر المحاسبة وقيام الليل</h4>
-                    <p>خلوة صادقة مع الله، مراجعة دفتر المحاسبة اليومية، قيام الليل، وصحبة أخوية تزيد الإيمان ثباتاً.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="camp-pillars-column">
-              <h3>المرتكزات الخمسة للتربية</h3>
-              <div className="pillars-cards">
-                <div className="p-card">
-                  <strong>01. القرآن الكريم</strong>
-                  <p>تدبراً وحفظاً وفهماً وتثبيتاً في الصدور.</p>
-                </div>
-                <div className="p-card">
-                  <strong>02. الصحبة الصالحة</strong>
-                  <p>بيئة إيمانية حاضنة تعين على الثبات والمعالي.</p>
-                </div>
-                <div className="p-card">
-                  <strong>03. المجاهدة والصبر</strong>
-                  <p>تكاليف ومسؤوليات مستمرة لبناء طول النفس.</p>
-                </div>
-                <div className="p-card">
-                  <strong>04. المحاسبة الصادقة</strong>
-                  <p>دفتر يومي لمراجعة النفس وضبط العادات والوقت.</p>
-                </div>
-                <div className="p-card">
-                  <strong>05. التطبيق العملي</strong>
-                  <p>تحويل القيم الإيمانية إلى واقع وسلوك وكسب حلال.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 11 Focus Axes list */}
-          <div className="maelem-axes-container">
-            <h3>محاور المخيم الاستراتيجية الـ 11</h3>
-            <div className="axes-chips-grid">
-              <div className="axis-chip"><strong>1. المحور الإيماني</strong><span>الصلة بالله، الخلوة، وقيام الليل</span></div>
-              <div className="axis-chip"><strong>2. المحور القرآني</strong><span>تدبر الأنبياء والعنكبوت وسنن الثبات</span></div>
-              <div className="axis-chip"><strong>3. الحفظ القرآني</strong><span>مراجعة 10 أجزاء وإتقان الورد</span></div>
-              <div className="axis-chip"><strong>4. السلوكي والنفسي</strong><span>إدارة الانفعالات والصبر تحت الضغط</span></div>
-              <div className="axis-chip"><strong>5. الفتن والشهوات</strong><span>التعامل مع الشاشات والخلوات</span></div>
-              <div className="axis-chip"><strong>6. المحور الفكري</strong><span>صناعة اليقين والتفكير الناقد</span></div>
-              <div className="axis-chip"><strong>7. الانتكاسة والنهوض</strong><span>فن التوبة والعودة بعد التعثر</span></div>
-              <div className="axis-chip"><strong>8. العمل الحر والكسب</strong><span>قيمة السعي الحلال والمبادرة</span></div>
-              <div className="axis-chip"><strong>9. المحور المهاري</strong><span>صناعة العادات وإدارة الوقت</span></div>
-              <div className="axis-chip"><strong>10. المحور الاجتماعي</strong><span>صناعة الأخوة والتأثير الإيجابي</span></div>
-              <div className="axis-chip"><strong>11. القدوات والرجال</strong><span>دراسة سير الأنبياء ونماذج الثبات</span></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Living Atmosphere Highlights */}
-      <section className="atmosphere-section">
-        <div className="section-heading">
-          <span>المعايشة والأثر</span>
-          <h2>مشاهد من بيئة إحياء التربوية</h2>
-          <p className="section-lead">نؤمن بأن التربية الحقيقية ليست مجرد تلقين في قاعة، بل هي بيئة متكاملة تصنع الأثر في النفس والسلوك.</p>
-        </div>
-
-        <div className="atmosphere-grid">
-          <article className="atmo-card">
-            <div className="atmo-num">01</div>
-            <div className="atmo-content">
-              <h3>حلقات الوحي والتدبر</h3>
-              <p>جلسات قرآنية يومية تربط الآيات بواقع الفتى، وتستخرج منها سنن الحياة والهداية وتثبيت الفؤاد.</p>
-            </div>
+        <div className="methodology-grid">
+          <article className="method-card">
+            <div className="m-num">01</div>
+            <h3>القرآن الكريم</h3>
+            <p>تدبراً وحفظاً وفهماً وعملاً، ليكون القرآن قائداً للسلوك ومرجعاً حاكماً وقت الفتن والتقلبات.</p>
           </article>
 
-          <article className="atmo-card">
-            <div className="atmo-num">02</div>
-            <div className="atmo-content">
-              <h3>المبيتات والليالي الإيمانية</h3>
-              <p>معايشة حية تكسر حواجز الرسميات، وتصنع أخوة في الله تدوم وتعين على تقلبات الأيام.</p>
-            </div>
+          <article className="method-card">
+            <div className="m-num">02</div>
+            <h3>الصحبة الصالحة</h3>
+            <p>توفير بيئة إيمانية حاضنة وصحبة نقية تعين الفتى على الثبات وتدفعه نحو المعالي والمكارم.</p>
           </article>
 
-          <article className="atmo-card">
-            <div className="atmo-num">03</div>
-            <div className="atmo-content">
-              <h3>حوارات اليقين وبناء الفكر</h3>
-              <p>مساحة آمنة لطرح التساؤلات، وتفكيك الشبهات المعاصرة بأسلوب علمي رصين يرسخ اليقين.</p>
-            </div>
+          <article className="method-card">
+            <div className="m-num">03</div>
+            <h3>المجاهدة والصبر</h3>
+            <p>تكاليف يومية ومسؤوليات مستمرة لبناء الصبر وطول النفس وقوة الإرادة في مواجهة الصوارف.</p>
           </article>
 
-          <article className="atmo-card">
-            <div className="atmo-num">04</div>
-            <div className="atmo-content">
-              <h3>المشاريع وبناء الرجولة</h3>
-              <p>تكاليف حقيقية وتدريب على الكسب الحلال والمسؤولية والانضباط الذاتي لتخريج رجال فاعلين.</p>
-            </div>
+          <article className="method-card">
+            <div className="m-num">04</div>
+            <h3>المحاسبة الصادقة</h3>
+            <p>مراجعة يومية صادقة للنفس، واستدراك التقصير، وبناء العادات الحسنة وإدارة الوقت بدقة.</p>
+          </article>
+
+          <article className="method-card">
+            <div className="m-num">05</div>
+            <h3>التطبيق والعمل</h3>
+            <p>تحويل المعاني الإيمانية والمعارف الشرعية إلى واقع ملموس وأثر متعدٍّ ينفع الأسرة والمجتمع.</p>
           </article>
         </div>
       </section>
 
-      {/* Call to action */}
-      <section className="public-cta-section">
-        <div className="cta-box">
-          <span className="cta-kicker">انضم إلى محاضن إحياء</span>
-          <h2>استثمر في بناء جيلك القرآني</h2>
-          <p>تواصل معنا اليوم لمعرفة تفاصيل التسجيل في الحلقات والمخيمات والمجالس العلمية.</p>
-          <div className="cta-actions">
-            <a
-              href="https://wa.me/905375862201?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A3%D9%88%D8%AF%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D8%A8%D8%B1%D8%A7%D9%85%D8%AC%20%D9%85%D8%A4%D8%B3%D8%B3%D8%A9%20%D8%A5%D8%AD%D9%8A%D8%A7%D8%A1"
-              target="_blank"
-              rel="noreferrer"
-              className="primary-action"
-            >
-              تواصل معنا عبر واتساب <ArrowLeft size={21} />
-            </a>
-            <LinkButton to="/login" className="outline-action light">
-              دخول المنصة للمعلمين والإدارة <SignIn size={21} />
-            </LinkButton>
+      {/* 6. Institutional Contact Section */}
+      <section className="institutional-contact-section" id="contact">
+        <div className="contact-card-box">
+          <div className="contact-header">
+            <span className="section-kicker">التواصل والتعاون</span>
+            <h2>مؤسسة إحياء</h2>
+            <p>نرحب بالتواصل والاستفسارات من أولياء الأمور والمهتمين بالبرامج التربوية والعلمية.</p>
+          </div>
+          <div className="contact-details-grid">
+            <div className="c-item">
+              <Phone size={24} />
+              <div>
+                <small>الهاتف والتواصل المباشر</small>
+                <strong>+90 537 586 2201</strong>
+              </div>
+            </div>
+            <div className="c-item">
+              <EnvelopeSimple size={24} />
+              <div>
+                <small>البريد الإلكتروني الرسمي</small>
+                <strong>ihyaa338@gmail.com</strong>
+              </div>
+            </div>
+            <div className="c-item">
+              <Sparkle size={24} />
+              <div>
+                <small>المعرف الرسمي الموحد</small>
+                <strong>@ihyaatr</strong>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </main>
 
-    <footer className="public-footer" id="contact">
+    <footer className="public-footer">
       <Logo light />
       <p>مؤسسة إحياء — جيلٌ على خُطى السابقين • اسطنبول</p>
       <div>
